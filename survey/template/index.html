@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -67,6 +68,24 @@
 .proceed-button button:hover {
     background-color: darkgreen;
 }
+.logo {
+            width: 160px; /* Set a fixed width in pixels */
+            height: auto; /* Set a fixed height in pixels */
+            position: absolute;
+            top: 10px;
+            left: 3px;
+            transform-origin: top left; /* Set the transform origin to the top left corner */
+            transform: scale(1); /* Initial scale value */
+        }
+        @media (max-width: 768px) {
+            .logo {
+                transform: scale(0.8); /* Adjust the scale value for the desired size during zoom */
+            }
+        }
+
+
+
+
 
     </style>
 </head>
@@ -74,10 +93,12 @@
   <form method="POST">
     {% csrf_token %}
     <div class="header">
+        <img src="{% static 'C:\Users\srira\OneDrive\Desktop\survey\css\download.jpeg'%}" alt="Logo" class="logo">
         <h1>Velammal College of Engineering and Technology, Madurai</h1>
         <span class="autonomous">(Autonomous)</span>
         <h2 style="text-align: center;">Department of Computer Science and Engineering</h2>
     </div>
+    
     <div class="content">
         <p class="important">Survey form for Vision, Mission, PEOs and PSOs</p>
         <p class="medium">
