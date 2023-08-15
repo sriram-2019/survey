@@ -238,6 +238,7 @@
               success: function(data) {
                 console.log(data.message);
                 alert(data.message);
+                window.location.href = '/third.html';
               },
               error: function(xhr) {
                 if (xhr.responseJSON && xhr.responseJSON.error) {
