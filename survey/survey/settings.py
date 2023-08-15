@@ -124,3 +124,7 @@ STATICFILES_DIRS=[STATIC_DIR]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 APPEND_SLASH = False
+# Add these lines to your settings.py
+
+MEDIA_URL = '/media/'  # The URL for serving media files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # The filesystem path where media files will be stored

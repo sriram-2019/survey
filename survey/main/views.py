@@ -5,6 +5,13 @@ from django.http import JsonResponse
 from main.models import student1
 from main.models import staff2
 from main.models import parent1
+from main.models import Industry
+from django.core.files.storage import FileSystemStorage
+from main.models import Industry
+from main.models import Alumni
+from main.models import Academician
+
+import os
 def inde(request):
     if(request.method=="POST"):
         return render(request,'2nd.html')
@@ -48,29 +55,113 @@ def gets(request):
             saves.save()
             response_data = {"message": " data received and processed successfully"}
         elif stakeholder == 'industry':
-            sd=request.POST.get('idus_name')
-            batch=request.POST.get('working_in')
-            ocu=request.POST.get('designation')
-            sd=request.POST.get('email_ind')
-            idproof=request.POST.get('uploads')
+            indus_name = request.POST.get('indus_name')
+            working_in = request.POST.get('working_in')
+            designation = request.POST.get('designation')
+            email_ind = request.POST.get('email_ind')
+            request.session['indus_name']=indus_name
+            request.session['email']=email_ind
+            uploaded_file = request.FILES.get('uploads')  # Access uploaded file
+            
+            if uploaded_file:
+                # Rename the uploaded file using the name of the industry person
+                original_filename, file_extension = os.path.splitext(uploaded_file.name)
+                new_filename = f"{indus_name.replace(' ', '_')}{file_extension}"
+                
+                # Save the uploaded file to the media directory with the new filename
+                fs = FileSystemStorage(location='media/industry_people_id')
+                new_file_path = fs.save(new_filename, uploaded_file)
+                
+                # Create a new Industry instance and set the attributes
+                instance = Industry.objects.create(
+                    name=indus_name,
+                    working_in=working_in,
+                    designation=designation,
+                    email=email_ind,
+                    uploaded_file=new_file_path  # Assign the path to the new file in the model field
+                )
+                
+                # Return a success message
+                response_data = {'message': 'Industry information and file uploaded successfully'}
+                return JsonResponse(response_data)
+            else:
+                response_data = {'error': 'No file was uploaded'}
+                return JsonResponse(response_data, status=400)
+
+
+
             response_data = {"message": " data received and processed successfully"}
         elif stakeholder == 'academician':
-            name_c=request.POST.get('name_c')
-            coll_ame=request.POST.get('name_coll')
-            desig=request.POST.get('desig')
-            id=request.POST.get('id')
-            response_data = {"message": " data received and processed successfully"}
-        elif stakeholder == 'alumni':
-            name_al=request.POST.get('name_alumni')
-            batch_al=request.POST.get('batchs')
-            current=request.POST.get('curret')
-            desigs=request.POST.get('desigs')
-            response_data = {"message": " data received and processed successfully"}
-        else:
-            response_data = {"message": "Invalid stakeholder selected"}
+                name_c = request.POST.get('name_c')
+                coll_name = request.POST.get('name_coll')
+                desig = request.POST.get('desig')
+                id_mail = request.POST.get('id')
+                request.session['name_c']=name_c
+                request.session['id_mail']=id_mail
+                uploaded_file = request.FILES.get('uploads')
+                if uploaded_file:
+                        # Rename the uploaded file using the name of the academician
+                        original_filename, file_extension = os.path.splitext(uploaded_file.name)
+                        new_filename = f"{name_c.replace(' ', '_')}{file_extension}"
+                        
+                        # Save the uploaded file to the media directory with the new filename
+                        fs = FileSystemStorage(location='media/academician_files')
+                        new_file_path = fs.save(new_filename, uploaded_file)
+                        
+                        # Create a new Academician instance and set the attributes
+                        instance = Academician.objects.create(
+                            name=name_c,
+                            working_college=coll_name,
+                            designation=desig,
+                            official_mail=id_mail,
+                            uploaded_file=new_file_path  # Assign the path to the new file in the model field
+                        )
+                        
+                        # Return a success message
+                        response_data = {'message': 'Academician information and file uploaded successfully'}
+                        return JsonResponse(response_data)
+                else:
+                        response_data = {'error': 'No file was uploaded'}
+                        return JsonResponse(response_data, status=400)
+            
 
-        return JsonResponse(response_data)
-    
+
+        
+        elif stakeholder == 'alumni':
+            name_alumni = request.POST.get('name_alumni')
+            batch_studied = request.POST.get('batchs')
+            currently_working = request.POST.get('curret')
+            designation = request.POST.get('desigs')
+            official_mail = request.POST.get('em_id')
+            uploaded_file = request.FILES.get('uploads')
+
+            request.session['name_alumni']=name_alumni
+            request.session['official_mail']=official_mail
+            if uploaded_file:
+                    # Rename the uploaded file using the name of the alumni
+                    original_filename, file_extension = os.path.splitext(uploaded_file.name)
+                    new_filename = f"{name_alumni.replace(' ', '_')}{file_extension}"
+                    
+                    # Save the uploaded file to the media directory with the new filename
+                    fs = FileSystemStorage(location='media/alumni_files')
+                    new_file_path = fs.save(new_filename, uploaded_file)
+                    
+                    # Create a new Alumni instance and set the attributes
+                    instance = Alumni.objects.create(
+                        name=name_alumni,
+                        batch_studied=batch_studied,
+                        currently_working=currently_working,
+                        designation=designation,
+                        official_mail=official_mail,
+                        uploaded_file=new_file_path  # Assign the path to the new file in the model field
+                    )
+                    
+                    # Return a success message
+                    response_data = {'message': 'Alumni information and file uploaded successfully'}
+                    return JsonResponse(response_data)
+            else:
+                    response_data = {'error': 'No file was uploaded'}
+                    return JsonResponse(response_data, status=400)
     return render(request, '2nd.html')
 def third(request):
     return render(request,'third.html')
@@ -114,25 +205,40 @@ def thirs(request):
             entry.save()
     if stake=="industry":
         if request.method == "POST":
+            name=request.session.get('indus_name')
+            email=request.session.get('email')
             vision_option = request.POST.get('vision_option')
             if vision_option == 'current_vision':
                 vision="The Department should continue with the current vision statement as written."
             elif vision_option == 'revised_vision': 
                 vision=(request.POST.get('vision_goal'))
+            entry=Industry.objects.get(name=name,email=email)
+            entry.vision=vision
+            entry.save()
     if stake=="academician":
         if request.method == "POST":
+            name=request.session.get('name_c')
+            email=request.session.get('id_mail')
             vision_option = request.POST.get('vision_option')
             if vision_option == 'current_vision':
                 vision="The Department should continue with the current vision statement as written."
             elif vision_option == 'revised_vision': 
                 vision=(request.POST.get('vision_goal'))
+            entry=Academician.objects.get(name=name,official_mail=email)
+            entry.vision=vision
+            entry.save()
     if stake=="alumni":
         if request.method == "POST":
+            name=request.session.get('name_alumni')
+            email=request.session.get('official_mail')
             vision_option = request.POST.get('vision_option')
             if vision_option == 'current_vision':
                 vision="The Department should continue with the current vision statement as written."
             elif vision_option == 'revised_vision': 
                 vision=(request.POST.get('vision_goal'))
+            entry=Alumni.objects.get(name=name,official_mail=email)
+            entry.vision=vision
+            entry.save()
     return render(request, 'fouth.html')
 def fourth(request):
     stake = request.session.get('stakeholder')
@@ -174,26 +280,40 @@ def fourth(request):
             entry.save()
     if stake=="industry":
         if request.method == "POST":
+            name=request.session.get('indus_name')
+            email=request.session.get('email')
             vision_option = request.POST.get('mission_option')
             if vision_option == 'current_mission':
                 vision="The Department should continue with the current mission statement as written."
             elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
-            
+            entry=Industry.objects.get(name=name,email=email)
+            entry.mission=vision
+            entry.save()
     if stake=="academician":
         if request.method == "POST":
+            name=request.session.get('name_c')
+            email=request.session.get('id_mail')
             vision_option = request.POST.get('mission_option')
             if vision_option == 'current_mission':
                 vision="The Department should continue with the current mission statement as written."
             elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
+            entry=Academician.objects.get(name=name,official_mail=email)
+            entry.mission=vision
+            entry.save()
     if stake=="alumni":
         if request.method == "POST":
+            name=request.session.get('name_alumni')
+            email=request.session.get('official_mail')
             vision_option = request.POST.get('mission_option')
-            if vision_option == 'mission_vision':
+            if vision_option == 'current_mission':
                 vision="The Department should continue with the current mission statement as written."
-            elif vision_option == 'mission_vision': 
+            elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
+            entry=Alumni.objects.get(name=name,official_mail=email)
+            entry.mission=vision
+            entry.save()
     return render(request, 'fifth.html')
 def fifth(request):
     stake = request.session.get('stakeholder')
@@ -235,26 +355,41 @@ def fifth(request):
             entry.save()
     if stake=="industry":
         if request.method == "POST":
+            name=request.session.get('indus_name')
+            email=request.session.get('email')
             vision_option = request.POST.get('mission_option')
             if vision_option == 'current_mission':
                 vision="The Department should continue with the current PEOs statement as written."
             elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
+            entry=Industry.objects.get(name=name,email=email)
+            entry.peo=vision
+            entry.save()
             
     if stake=="academician":
         if request.method == "POST":
+            name=request.session.get('name_c')
+            email=request.session.get('id_mail')
             vision_option = request.POST.get('mission_option')
             if vision_option == 'current_mission':
                 vision="The Department should continue with the current PEOs statement as written."
             elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
+            entry=Academician.objects.get(name=name,official_mail=email)
+            entry.peo=vision
+            entry.save()
     if stake=="alumni":
         if request.method == "POST":
+            name=request.session.get('name_alumni')
+            email=request.session.get('official_mail')
             vision_option = request.POST.get('mission_option')
-            if vision_option == 'mission_vision':
+            if vision_option == 'current_mission':
                 vision="The Department should continue with the current PEOS statement as written."
-            elif vision_option == 'mission_vision': 
+            elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
+            entry=Alumni.objects.get(name=name,official_mail=email)
+            entry.peo=vision
+            entry.save()
     return render(request, 'sixth.html')
 def sixth(request):
     stake = request.session.get('stakeholder')
@@ -296,24 +431,41 @@ def sixth(request):
             entry.save()
     if stake=="industry":
         if request.method == "POST":
+            name=request.session.get('indus_name')
+            email=request.session.get('email')
             vision_option = request.POST.get('mission_option')
             if vision_option == 'current_mission':
                 vision="The Department should continue with the current PSOs statement as written."
             elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
-            
+            entry=Industry.objects.get(name=name,email=email)
+            entry.pos=vision
+            entry.save()
     if stake=="academician":
         if request.method == "POST":
+            name=request.session.get('name_c')
+            email=request.session.get('id_mail')
             vision_option = request.POST.get('mission_option')
             if vision_option == 'current_mission':
                 vision="The Department should continue with the current PSOs statement as written."
             elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
+            entry=Academician.objects.get(name=name,official_mail=email)
+            entry.pos=vision
+            entry.save()
     if stake=="alumni":
         if request.method == "POST":
+            name=request.session.get('name_alumni')
+            email=request.session.get('official_mail')
             vision_option = request.POST.get('mission_option')
-            if vision_option == 'mission_vision':
+            if vision_option == 'current_mission':
                 vision="The Department should continue with the current PSOs statement as written."
-            elif vision_option == 'mission_vision': 
+            elif vision_option == 'revised_mission': 
                 vision=(request.POST.get('mission_goal'))
+            entry=Alumni.objects.get(name=name,official_mail=email)
+            entry.pos=vision
+            entry.save()
+        s=Alumni.objects.all()
+        for i in s:
+            print(i.name,i.vision,i.mission,i.uploaded_file)
     return render(request, 'seventh.html')
